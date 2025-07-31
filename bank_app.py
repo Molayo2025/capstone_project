@@ -103,9 +103,11 @@ def sign_up():
             break
         except ValueError:
             print("Please enter a valid number")
+
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
 
     account_number = generate_unique_account_number()
+
     balance = initial_deposit
 
     with sqlite3.connect(BANKING_FILES) as conn:
@@ -129,7 +131,7 @@ def log_in():
     while True:
         while True:
             username = input("Enter your username: ").strip()
-            if not username.isalpha():
+            if not is_valid_username(username):
                 print("Username is required")
                 continue
             break
@@ -153,7 +155,7 @@ def log_in():
                 print("Invalid username or password")
                 continue
             else:
-                print("\n Logged in successfully")
+                print("\nLogged in successfully")
                 bank_app(user)
 
 def bank_app(user):
@@ -163,6 +165,7 @@ def bank_app(user):
     while True:
         print(
             """
+            
 1. Deposit
 2. Withdraw
 3. Check Balance
@@ -224,7 +227,9 @@ def withdraw(user_id):
         with sqlite3.connect(BANKING_FILES) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT balance FROM users WHERE id = ?", (user_id,))
+            
             balance = cursor.fetchone()[0]
+            
             if amount > balance:
                 print("Insufficient funds.")
                 continue
@@ -296,6 +301,12 @@ def transfer(user_id):
                     print("You can't transfer to yourself.")
                     continue
 
+                print(f"\nRecipient Name: {receiver_name}")
+                confirm = input("Do you want to continue with the transfer? (yes/no): ").strip().lower()
+                if confirm != 'yes':
+                    print("Transfer cancelled. Returning to menu...")
+                    break
+
                 amount_input = input("Enter transfer amount: ").strip()
                 if not amount_input or not amount_input.replace('.', '', 1).isdigit():
                     print("Invalid amount. Use only numbers.")
@@ -335,6 +346,10 @@ def transfer(user_id):
 set_up()
 
 menu = """
+✨ Welcome to My Bank App! ✨
+
+What would you like to do today?
+
 1. Sign Up
 2. Log In
 3. Quit
