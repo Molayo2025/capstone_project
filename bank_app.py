@@ -40,7 +40,7 @@ def generate_unique_account_number():
         with sqlite3.connect(BANKING_FILES) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT id FROM users WHERE account_number = ?", (acc_no,))
-            if not cursor.fetchone():
+            if not cursor.fetchone():    
                 return acc_no
 
 def is_valid_password(password):
@@ -54,17 +54,21 @@ def is_valid_password(password):
 def is_valid_username(username):
     return re.fullmatch(r"\w{3,20}", username)
 
+def is_valid_name(name):
+    return name.isalpha() and len(name) >= 4
+
+
 def sign_up():
-    while True:
+    while True: 
         first_name = input("Enter your first name: ").strip()
-        if not first_name.isalpha():
+        if not is_valid_name(first_name):
             print("First name is required")
             continue
         break
 
     while True:
         last_name = input("Enter your last name: ").strip()
-        if not last_name.isalpha():
+        if not is_valid_name(last_name):
             print("Last name is required")
             continue
         break
@@ -117,7 +121,6 @@ def sign_up():
                 INSERT INTO users (full_name, username, password, account_number, balance)
                 VALUES (?, ?, ?, ?, ?)
             """, (full_name, username, hashed_password, account_number, balance))
-            conn.commit()
             print("Sign up successful!")
             print(f"Your account number is {account_number}")
         except sqlite3.IntegrityError as e:
@@ -165,7 +168,7 @@ def bank_app(user):
     while True:
         print(
             """
-            
+
 1. Deposit
 2. Withdraw
 3. Check Balance
@@ -196,32 +199,30 @@ def bank_app(user):
 
 def deposit(user_id):
     while True:
-        amount = input("Enter deposit amount: ").strip()
-        if not amount or not amount.replace('.', '', 1).isdigit():
+        try:
+            amount = float(input("Enter deposit amount: ").strip())
+            if amount <= 0:
+                print("Amount must be greater than zero.")
+                continue
+            break
+        except ValueError:
             print("Invalid amount.")
-            continue
-        amount = float(amount)
-        if amount <= 0:
-            print("Amount must be greater than zero.")
-            continue
-        break
 
     with sqlite3.connect(BANKING_FILES) as conn:
         cursor = conn.cursor()
         cursor.execute("UPDATE users SET balance = balance + ? WHERE id = ?", (amount, user_id))
         cursor.execute("INSERT INTO transactions (user_id, type, amount, details) VALUES (?, 'deposit', ?, ?)", (user_id, amount, 'Deposited funds'))
-        conn.commit()
         loading("Deposit successful.")
 
 def withdraw(user_id):
     while True:
-        amount = input("Enter withdrawal amount: ").strip()
-        if not amount or not amount.replace('.', '', 1).isdigit():
+        try:
+            amount = float(input("Enter withdrawal amount: ").strip())
+            if amount <= 0:
+                print("Amount must be greater than zero.")
+                continue
+        except ValueError:
             print("Invalid amount.")
-            continue
-        amount = float(amount)
-        if amount <= 0:
-            print("Amount must be greater than zero.")
             continue
 
         with sqlite3.connect(BANKING_FILES) as conn:
@@ -235,9 +236,7 @@ def withdraw(user_id):
                 continue
             cursor.execute("UPDATE users SET balance = balance - ? WHERE id = ?", (amount, user_id))
             cursor.execute("INSERT INTO transactions (user_id, type, amount, details) VALUES (?, 'withdrawal', ?, ?)", (user_id, amount, 'Withdrawal'))
-            conn.commit()
             loading("processing withdrawal....")
-            time.sleep(1)
             print("Withdrawal successful.")
             break
 
@@ -335,8 +334,6 @@ def transfer(user_id):
                     INSERT INTO transactions (user_id, sender, type, amount, details)
                     VALUES (?, ?, 'transfer in', ?, ?)
                 """, (recipient_id, sender_name, amount, f"Received from {sender_name}"))
-
-                conn.commit()
                 time.sleep(1)
                 loading(f"₦{amount:,.2f} sent to {recipient_acct}, {receiver_name} successfully.")
                 break
@@ -346,7 +343,7 @@ def transfer(user_id):
 set_up()
 
 menu = """
-✨ Welcome to My Bank App! ✨
+✨ Welcome to MOPAL App! ✨
 
 What would you like to do today?
 
